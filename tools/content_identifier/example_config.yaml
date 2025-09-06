@@ -1,0 +1,15 @@
+general:
+  front_end:
+    _type: fastapi
+    bind_host: 0.0.0.0
+    bind_port: 8080
+
+functions:
+  content_identifier:
+    _type: content_identifier
+    api_key: ${DASHSCOPE_API_KEY}
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    model_name: "qwen-vl-max-latest"
+
+workflow:
+  _type: content_identifier
