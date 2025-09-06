@@ -3,6 +3,7 @@ import os
 import json
 from collections import deque
 from typing import Dict, Deque, Tuple
+from datetime import datetime, timedelta
 
 from pydantic import Field
 from openai import OpenAI
@@ -17,14 +18,31 @@ from nat.data_models.function import FunctionBaseConfig
 
 logger = logging.getLogger(__name__)
 
-# In-memory store for session image queues, now storing (image_base64, suggestion_text) tuples
-session_queues: Dict[str, Deque[Tuple[str, str]]] = {}
+# In-memory store for session data, storing (deque, last_access_time)
+session_data: Dict[str, Tuple[Deque[Tuple[str, str]], datetime]] = {}
+SESSION_TIMEOUT = timedelta(minutes=10)  # Sessions expire after 10 minutes of inactivity
+
+def cleanup_expired_sessions():
+    """Iterate through sessions and remove any that have expired."""
+    now = datetime.now()
+    expired_sessions = [
+        sid for sid, (_, last_access) in session_data.items()
+        if now - last_access > SESSION_TIMEOUT
+    ]
+    for sid in expired_sessions:
+        del session_data[sid]
+        logger.info(f"Cleaned up expired session: {sid}")
 
 def get_session_queue(session_id: str, max_length: int) -> Deque[Tuple[str, str]]:
-    """Get or create a session image queue with a specified max length."""
-    if session_id not in session_queues:
-        session_queues[session_id] = deque(maxlen=max_length)
-    return session_queues[session_id]
+    """Get or create a session image queue, and update its last access time."""
+    cleanup_expired_sessions()  # Periodically clean up old sessions
+    if session_id not in session_data:
+        session_data[session_id] = (deque(maxlen=max_length), datetime.now())
+    else:
+        # Update last access time on existing session
+        queue, _ = session_data[session_id]
+        session_data[session_id] = (queue, datetime.now())
+    return session_data[session_id][0]
 
 
 LLM_SYSTEM_PROMPT = """
@@ -153,3 +171,4 @@ async def framing_advisor_function(
         yield FunctionInfo.create(single_fn=_response_fn)
     finally:
         logger.info("Cleaning up framing_advisor workflow.")
+        session_data.clear() # Also clear all sessions on shutdown
