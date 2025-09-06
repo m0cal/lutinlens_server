@@ -1,0 +1,32 @@
+# 1. 定义驱动 Agent 的语言模型 (LLM)
+#    使用和 OpenAI 兼容的 DashScope 端点来调用 qwen-flash
+llms:
+  qwen_llm:
+    _type: openai
+    model: "qwen-plus"
+    api_key: "${DASHSCOPE_API_KEY}" # 从环境变量读取 DashScope API Key
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+# 2. 定义 Agent 可以使用的工具
+functions:
+  # 'content_analyzer' 是我们为这个工具实例起的名字
+  content_analyzer:
+    _type: content_identifier # 工具的注册类型名
+    input_template: '{"image_uri": "{{input}}"}'
+    description: "一个用于分析图片内容和亮度的工具。输入图片的URI，返回内容的描述和亮度级别。"
+    # 以下参数是为工具内部的视觉模型配置的，它也使用DashScope
+    api_key: "${DASHSCOPE_API_KEY}"
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    model_name: "qwen-vl-max-latest" # 工具内部使用的视觉模型
+
+  lut_finder:
+    _type: lut_finder
+    description: "一个用来搜索适合LUT的工具。输入图片内容，返回一个LUT。"
+
+# 3. 定义工作流 (Workflow) 和 Agent
+workflow:
+  _type: react_agent # 使用 ReAct Agent
+  llm_name: qwen_llm
+  # 告诉 Agent 可以使用我们定义的工具
+  tool_names: [content_analyzer, lut_finder]
+  system_prompt: "You receive a image uri, and reply with a proper LUT's number.(Only reply number in your response). You may ask the human to use the following tools:\n\n{tools}\n\nYou may respond in one of two formats.\nUse the following format exactly to ask the human to use a tool:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [{tool_names}]\nAction Input: The input to the action (if there is no required input, include 'Action Input: None')\nObservation: wait for the human to respond with the result from the tool, do not assume the response\n\n... (this Thought/Action/Action Input/Observation can repeat N times. If you do not need to use a tool, or after asking the human to use any tools and waiting for the human to respond, you might know the final answer.)\nUse the following format once you have the final answer:\n\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question"
