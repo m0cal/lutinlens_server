@@ -12,3 +12,6 @@ object_stores:
     access_key: minioadmin
     secret_key: minioadmin
     bucket_name: lutinlens
+
+workflow:
+  _type: echo
