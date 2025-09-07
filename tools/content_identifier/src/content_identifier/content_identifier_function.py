@@ -1,5 +1,8 @@
 import logging
 import os
+import requests
+import base64
+import mimetypes
 from openai import OpenAI
 
 from pydantic import Field
@@ -27,9 +30,33 @@ class ContentIdentifierFunctionConfig(FunctionBaseConfig, name="content_identifi
                            description="Vision-language model name to se")
 
 
-async def analyze_image_content_and_brightness(image_uri: str, config: ContentIdentifierFunctionConfig) -> tuple[str, str]:
+async def analyze_image_content_and_brightness(image_url: str, config: ContentIdentifierFunctionConfig) -> tuple[str, str]:
     """使用视觉语言模型同时分析图像内容和亮度"""
     try:
+        # 下载图片
+        logger.info(f"Downloading image from {image_url}")
+        response = requests.get(image_url)
+        response.raise_for_status()  # 如果下载失败则抛出异常
+        image_data = response.content
+        logger.info("Image downloaded successfully.")
+
+        # 猜测MIME类型
+        mime_type, _ = mimetypes.guess_type(image_url)
+        if mime_type is None:
+            # 如果从URL无法猜测，则从响应头中获取
+            content_type = response.headers.get('Content-Type')
+            if content_type:
+                mime_type = content_type.split(';')[0]
+            else:
+                mime_type = "image/jpeg"  # 默认为jpeg
+        logger.info(f"Guessed MIME type: {mime_type}")
+
+        # 将图片编码为Base64
+        base64_image = base64.b64encode(image_data).decode('utf-8')
+
+        # 创建Data URI
+        image_data_uri = f"data:{mime_type};base64,{base64_image}"
+
         # 创建 OpenAI 客户端用于 DashScope API
         client = OpenAI(
             api_key=config.api_key,
@@ -63,7 +90,7 @@ async def analyze_image_content_and_brightness(image_uri: str, config: ContentId
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": image_uri
+                            "url": image_data_uri
                         }
                     }
                 ]
@@ -113,6 +140,9 @@ async def analyze_image_content_and_brightness(image_uri: str, config: ContentId
             logger.error("No valid response from vision model")
             return "无法分析图像内容", "无法判断亮度级别"
 
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading image: {e}")
+        return f"图像下载失败: {str(e)}", "无法判断亮度级别"
     except Exception as e:
         logger.error(f"Error analyzing image: {e}")
         return f"图像分析失败: {str(e)}", "无法判断亮度级别"
@@ -124,11 +154,11 @@ async def content_identifier_function(
 ):
     async def _response_fn(request: ContentIdentifyRequest) -> ContentIdentifyResponse:
         try:
-            logger.info(f"Analyzing image: {request.image_uri}")
+            logger.info(f"Analyzing image: {request.image_url}")
 
             # 使用视觉语言模型同时分析图像内容和亮度
             content_analysis, brightness_description = await analyze_image_content_and_brightness(
-                request.image_uri,
+                request.image_url,
                 config
             )
 
