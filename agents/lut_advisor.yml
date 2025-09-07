@@ -1,3 +1,10 @@
+general:
+  front_end:
+    object_store: photo_store
+    _type: fastapi
+    cors:
+      allow_origins: ['*']
+
 # 1. 定义驱动 Agent 的语言模型 (LLM)
 #    使用和 OpenAI 兼容的 DashScope 端点来调用 qwen-flash
 llms:
@@ -30,3 +37,11 @@ workflow:
   # 告诉 Agent 可以使用我们定义的工具
   tool_names: [content_analyzer, lut_finder]
   system_prompt: "You receive a image uri, and reply with a proper LUT's number.(Only reply number in your response). You may ask the human to use the following tools:\n\n{tools}\n\nYou may respond in one of two formats.\nUse the following format exactly to ask the human to use a tool:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [{tool_names}]\nAction Input: The input to the action (if there is no required input, include 'Action Input: None')\nObservation: wait for the human to respond with the result from the tool, do not assume the response\n\n... (this Thought/Action/Action Input/Observation can repeat N times. If you do not need to use a tool, or after asking the human to use any tools and waiting for the human to respond, you might know the final answer.)\nUse the following format once you have the final answer:\n\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question"
+
+object_stores:
+  photo_store:
+    _type: s3
+    endpoint_url: http://localhost:9000
+    access_key: minioadmin
+    secret_key: minioadmin
+    bucket_name: lutinlens
