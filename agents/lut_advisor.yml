@@ -19,7 +19,6 @@ functions:
   # 'content_analyzer' 是我们为这个工具实例起的名字
   content_analyzer:
     _type: content_identifier # 工具的注册类型名
-    input_template: '{"image_url": "{{input}}"}'
     description: "一个用于分析图片内容和亮度的工具。输入图片的URI，返回内容的描述和亮度级别。"
     # 以下参数是为工具内部的视觉模型配置的，它也使用DashScope
     api_key: "${DASHSCOPE_API_KEY}"
@@ -28,7 +27,7 @@ functions:
 
   lut_finder:
     _type: lut_finder
-    description: "一个用来搜索适合LUT的工具。输入图片内容，返回一个LUT。"
+    description: "一个用来搜索适合LUT的工具。输入图片内容的描述，返回一个LUT。"
 
 # 3. 定义工作流 (Workflow) 和 Agent
 workflow:

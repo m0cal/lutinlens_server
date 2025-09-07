@@ -7,7 +7,6 @@ from openai import OpenAI
 
 from pydantic import Field
 
-from .models.request import ContentIdentifyRequest
 from .models.response import ContentIdentifyResponse
 
 from nat.builder.builder import Builder
@@ -152,13 +151,13 @@ async def analyze_image_content_and_brightness(image_url: str, config: ContentId
 async def content_identifier_function(
     config: ContentIdentifierFunctionConfig, builder: Builder
 ):
-    async def _response_fn(request: ContentIdentifyRequest) -> ContentIdentifyResponse:
+    async def _response_fn(input_message: str) -> ContentIdentifyResponse:
         try:
-            logger.info(f"Analyzing image: {request.image_url}")
+            logger.info(f"Analyzing image: {input_message}")
 
             # 使用视觉语言模型同时分析图像内容和亮度
             content_analysis, brightness_description = await analyze_image_content_and_brightness(
-                request.image_url,
+                input_message,
                 config
             )
 
