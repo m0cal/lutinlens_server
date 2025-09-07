@@ -1,0 +1,14 @@
+general:
+  front_end:
+    object_store: photo_store
+    _type: fastapi
+    cors:
+      allow_origins: ['*']
+
+object_stores:
+  photo_store:
+    _type: s3
+    endpoint_url: http://localhost:9000
+    access_key: minioadmin
+    secret_key: minioadmin
+    bucket_name: lutinlens
