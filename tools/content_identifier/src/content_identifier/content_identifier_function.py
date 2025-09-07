@@ -1,10 +1,5 @@
 import logging
-import base64
-import requests
 import os
-from io import BytesIO
-from PIL import Image
-import numpy as np
 from openai import OpenAI
 
 from pydantic import Field
@@ -29,69 +24,7 @@ class ContentIdentifierFunctionConfig(FunctionBaseConfig, name="content_identifi
     base_url: str = Field(default="https://dashscope.aliyuncs.com/compatible-mode/v1",
                          description="API base URL for DashScope service")
     model_name: str = Field(default="qwen-vl-max-latest",
-                           description="Vision-language model name to use")
-
-
-
-
-def determine_brightness_level(brightness_stats, content_analysis):
-    """
-    基于亮度统计和内容分析确定亮度级别
-    """
-    mean_brightness = brightness_stats['mean_brightness']
-    dark_ratio = brightness_stats['dark_ratio']
-    bright_ratio = brightness_stats['bright_ratio']
-
-    # 检查是否为室外场景
-    outdoor_keywords = ['天空', '云', '太阳', '户外', '街道', '建筑', '车辆', '树木', '公园']
-    is_outdoor = any(keyword in content_analysis for keyword in outdoor_keywords)
-
-    # 检查天气相关词汇
-    sunny_keywords = ['阳光', '晴天', '明亮', '蓝天']
-    cloudy_keywords = ['多云', '阴天', '云层']
-    night_keywords = ['夜晚', '月亮', '星星', '路灯', '灯光']
-
-    is_sunny = any(keyword in content_analysis for keyword in sunny_keywords)
-    is_cloudy = any(keyword in content_analysis for keyword in cloudy_keywords)
-    is_night = any(keyword in content_analysis for keyword in night_keywords)
-
-    # 基于多个因素判断亮度
-    if is_night or mean_brightness < 50:
-        if dark_ratio > 0.7:
-            return "非常昏暗 - 夜晚或极低光照环境，主要依靠人工照明"
-        else:
-            return "昏暗 - 夜晚环境下有适度的人工照明"
-
-    elif mean_brightness < 80:
-        if is_outdoor and is_cloudy:
-            return "较暗 - 室外阴天环境，自然光照不足"
-        elif not is_outdoor:
-            return "较暗 - 室内环境，光照条件一般"
-        else:
-            return "较暗 - 光照条件不佳"
-
-    elif mean_brightness < 120:
-        if is_outdoor:
-            if is_cloudy:
-                return "中等亮度 - 室外多云天气，光照适中"
-            else:
-                return "中等亮度 - 室外环境，有适度的自然光照"
-        else:
-            return "中等亮度 - 室内有良好的人工或自然光照"
-
-    elif mean_brightness < 180:
-        if is_outdoor and is_sunny:
-            return "明亮 - 室外晴天，阳光充足"
-        elif is_outdoor:
-            return "明亮 - 室外环境，光照良好"
-        else:
-            return "明亮 - 室内光照充足"
-
-    else:
-        if bright_ratio > 0.4:
-            return "非常明亮 - 强烈阳光或高强度照明，可能存在过曝"
-        else:
-            return "非常明亮 - 优质的光照条件"
+                           description="Vision-language model name to se")
 
 
 async def analyze_image_content_and_brightness(image_uri: str, config: ContentIdentifierFunctionConfig) -> tuple[str, str]:
@@ -183,37 +116,6 @@ async def analyze_image_content_and_brightness(image_uri: str, config: ContentId
     except Exception as e:
         logger.error(f"Error analyzing image: {e}")
         return f"图像分析失败: {str(e)}", "无法判断亮度级别"
-async def load_image_from_uri(image_uri: str):
-    """
-    从URI加载图像
-    """
-    try:
-        if image_uri.startswith('http'):
-            # 网络图片
-            response = requests.get(image_uri, timeout=30)
-            response.raise_for_status()
-            image = Image.open(BytesIO(response.content))
-        elif image_uri.startswith('data:image'):
-            # Base64编码的图片
-            header, encoded = image_uri.split(',', 1)
-            image_data = base64.b64decode(encoded)
-            image = Image.open(BytesIO(image_data))
-        else:
-            # 本地文件路径
-            image = Image.open(image_uri)
-
-        # 转换为RGB模式
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
-
-        # 转换为numpy数组
-        image_array = np.array(image)
-
-        return image_array
-
-    except Exception as e:
-        logger.error(f"Error loading image from URI: {e}")
-        raise ValueError(f"Failed to load image: {str(e)}")
 
 
 @register_function(config_type=ContentIdentifierFunctionConfig)
