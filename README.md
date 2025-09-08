@@ -44,3 +44,4 @@ With NeMo Agent Toolkit, we created 3 workflows that are finally deployed as ser
 2. Install NeMo with `https://docs.nvidia.com/nemo/agent-toolkit/1.2/quick-start/installing.html`
 3. Install all tools under `tools/` as Python packages.
 4. Use `nat serve` to deploy the workflows you want.
+If you need to use S3 to provide photo storage for `lut_advisor`, edit `s3/s3.yml` according to your storage settings.
