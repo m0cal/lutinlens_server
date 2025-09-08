@@ -35,6 +35,12 @@ With NeMo Agent Toolkit, we created 3 workflows that are finally deployed as ser
 		LLM --> Action
 	```
 3. **s3**
-   Object Storage.
+
+	Object Storage.
    
-   
+## Deployment
+
+1. `git clone` this repo.
+2. Install NeMo with `https://docs.nvidia.com/nemo/agent-toolkit/1.2/quick-start/installing.html`
+3. Install all tools under `tools/` as Python packages.
+4. Use `nat serve` to deploy the workflows you want.
