@@ -24,14 +24,16 @@ With NeMo Agent Toolkit, we created 3 workflows that are finally deployed as ser
 		Agent ->> LUTFinder: Photo Content
 		LUTFinder -->> Agent: LUT ID
 		Agent -->> User: LUT ID
-
-
-	
 	```
 2. **framing_advisor**
-   
+	
     Request with a session ID and a base64-encoded photo, response with a action as suggestion.
-
+	```mermaid
+	flowchart LR
+		Photo --|SessionID|--> Context
+		Context --> LLM
+		LLM --> Action
+	```
 3. **s3**
    Object Storage.
    
