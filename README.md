@@ -1,4 +1,4 @@
-# lutinlens_server
+# LutinLens Server
 
 A backend service for LutinLens, an AI camera app based on NeMo Agent Toolkit (NAT).
 
